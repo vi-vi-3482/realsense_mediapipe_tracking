@@ -11,6 +11,8 @@ class realsenseCamera:
         self.height = height
         self.fps = fps
 
+        self.frame_time = 1.0 / self.fps
+
         self.recorder = False
 
 
@@ -66,10 +68,9 @@ class realsenseCamera:
                         self.color_writer.write(color_image)
                         self.depth_writer.write(depth_colormap)
                         
-
-
                     if cv2.waitKey(1) & 0xFF == 27:  # ESC to exit
                         break
+
             except Exception as e:
                 print(f"Error streaming: {e}")
             finally:
@@ -81,6 +82,45 @@ class realsenseCamera:
         self.depth_writer = cv2.VideoWriter(f"{output_path}depth_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), self.fps, (self.width, self.height), isColor=True)
 
         self.recorder = True
+
+    def stop_recorder(self):
+        if self.recorder == True:
+            self.color_writer.release()
+            self.depth_writer.release()
+            self.recorder = False
+
+
+    def record(self, video_time):
+        self.start_recorder(output_path="output/")
+
+        start = time.monotonic()
+
+        try:
+            while time.monotonic() - start < video_time:
+
+                frame_start = time.monotonic()
+                
+                color_image, depth_image = self.get_frames()
+                if color_image is None or depth_image is None:
+                    continue
+                self.color_writer.write(color_image)
+                depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+                self.depth_writer.write(depth_colormap)
+
+                elapsed = time.monotonic() - frame_start
+                wait = self.frame_time - elapsed
+                if wait > 0:
+                    time.sleep(wait)
+
+
+        except Exception as e:
+            print(e)
+        finally:
+            self.stop_recorder()
+            self.stop()
+
+        
+        
 
     def stop(self):
         """Stop the streaming process."""
@@ -94,9 +134,5 @@ class realsenseCamera:
 
 if __name__ == "__main__":
     cam = realsenseCamera()
-    try:
-        cam.stream(display_rgb=True, display_depth=True, save=False)
-    finally:
-        pass
-        # cam.stop()
-    
+    # cam.stream(display_rgb=True, display_depth=True, save=False)
+    cam.record(10)
