@@ -134,5 +134,5 @@ class realsenseCamera:
 
 if __name__ == "__main__":
     cam = realsenseCamera()
-    # cam.stream(display_rgb=True, display_depth=True, save=False)
-    cam.record(10)
+    cam.stream(display_rgb=True, display_depth=True, save=False)
+    # cam.record(10)
