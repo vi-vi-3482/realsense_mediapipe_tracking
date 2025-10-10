@@ -28,6 +28,12 @@ class realsenseCamera:
 
             self.align = rs.align(rs.stream.color)
 
+            self.depth_stream = self.profile.get_stream(rs.stream.depth)  # depth stream
+            self.depth_intrinsics = self.depth_stream.as_video_stream_profile().get_intrinsics()
+            self.depth_scale = self.profile.get_device().first_depth_sensor().get_depth_scale()
+
+
+
             print("Camera connected")
         except Exception as e:
             print("Likely no camera connected. \n", e)
@@ -48,33 +54,32 @@ class realsenseCamera:
         return color_image, depth_image
 
     def stream(self, display_rgb=True, display_depth=False, save=False):
+        """Continuously stream and optionally display color+depth."""
+        if save == True:
+            self.start_recorder(output_path="output/")
+        try:
+            while True:
+                color_image, depth_image = self.get_frames()
+                depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+                if color_image is None or depth_image is None:
+                    continue
 
-            """Continuously stream and optionally display color+depth."""
-            if save == True:
-                self.start_recorder(output_path="output/")
-            try:
-                while True:
-                    color_image, depth_image = self.get_frames()
-                    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-                    if color_image is None or depth_image is None:
-                        continue
-
-                    if display_rgb:
-                        cv2.imshow('Color', color_image)
-                    if display_depth:
-                        cv2.imshow('Depth', depth_colormap)
+                if display_rgb:
+                    cv2.imshow('Color', color_image)
+                if display_depth:
+                    cv2.imshow('Depth', depth_colormap)
+                
+                if self.recorder == True:
+                    self.color_writer.write(color_image)
+                    self.depth_writer.write(depth_colormap)
                     
-                    if self.recorder == True:
-                        self.color_writer.write(color_image)
-                        self.depth_writer.write(depth_colormap)
-                        
-                    if cv2.waitKey(1) & 0xFF == 27:  # ESC to exit
-                        break
+                if cv2.waitKey(1) & 0xFF == 27:  # ESC to exit
+                    break
 
-            except Exception as e:
-                print(f"Error streaming: {e}")
-            finally:
-                self.stop()
+        except Exception as e:
+            print(f"Error streaming: {e}")
+        finally:
+            self.stop()
                 
     def start_recorder(self, output_path):
         os.makedirs(output_path, exist_ok=True)
