@@ -54,7 +54,7 @@ class handTrack:
     def start_recorder(self, output_path, fps, width, height):
         """Stars the cv2 video writer."""
         os.makedirs(output_path, exist_ok=True)
-        self.hand_writer = cv2.VideoWriter(f"{output_path}rgb_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+        self.hand_writer = cv2.VideoWriter(f"{output_path}/hand_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
 
     def stop_recorder(self):
         """Releases the cv2 video writer."""

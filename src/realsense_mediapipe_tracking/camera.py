@@ -53,7 +53,7 @@ class realsenseCamera:
 
         return color_image, depth_image
 
-    def stream(self, display_rgb=True, display_depth=False, save=False):
+    def stream(self, display_color=True, display_depth=False, save=False):
         """Continuously stream and optionally display color+depth."""
         if save == True:
             self.start_recorder(output_path="output/")
@@ -64,7 +64,7 @@ class realsenseCamera:
                 if color_image is None or depth_image is None:
                     continue
 
-                if display_rgb:
+                if display_color:
                     cv2.imshow('Color', color_image)
                 if display_depth:
                     cv2.imshow('Depth', depth_colormap)
@@ -83,8 +83,8 @@ class realsenseCamera:
                 
     def start_recorder(self, output_path):
         os.makedirs(output_path, exist_ok=True)
-        self.color_writer = cv2.VideoWriter(f"{output_path}rgb_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), self.fps, (self.width, self.height))
-        self.depth_writer = cv2.VideoWriter(f"{output_path}depth_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), self.fps, (self.width, self.height), isColor=True)
+        self.color_writer = cv2.VideoWriter(f"{output_path}/color__video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), self.fps, (self.width, self.height))
+        self.depth_writer = cv2.VideoWriter(f"{output_path}/depth_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), self.fps, (self.width, self.height), isColor=True)
 
         self.recorder = True
 
@@ -139,5 +139,5 @@ class realsenseCamera:
 
 if __name__ == "__main__":
     cam = realsenseCamera()
-    cam.stream(display_rgb=True, display_depth=True, save=False)
+    cam.stream(display_color=True, display_depth=True, save=False)
     # cam.record(10)
