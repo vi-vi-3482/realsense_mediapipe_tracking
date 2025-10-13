@@ -1,9 +1,11 @@
+import copy
 import os
 import time
 import mediapipe as mp
 import cv2
 import numpy as np
 import realsense_mediapipe_tracking as rs
+import camera
 
 class handTrack:
     def __init__(self, cam):
@@ -20,8 +22,47 @@ class handTrack:
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
 
-    def stream(self):
-        color_image, depth_image = self.cam.get_frames()
+    def stream(self, marks_to_show=[0, 4, 8, 12, 16, 20], save=False):
+        if save == True:
+            self.start_recorder(output_path="output/")
+        while True:
+            color_image, depth_image = self.cam.get_frames()
+            h, w, _ = color_image.shape
+
+            landmark_image = copy.deepcopy(color_image)
+
+            landmarks_xyz, results = self.tracking(color_image, depth_image)
+
+            for idx in marks_to_show:
+
+                X = landmarks_xyz[idx][0]
+                Y = landmarks_xyz[idx][1]
+                Z = landmarks_xyz[idx][2]
+
+                lm = results.landmark[idx]
+
+                px, py = int(lm.x * w), int(lm.y * h)
+
+                
+                cv2.circle(landmark_image, (px, py), 5, (0, 255, 0), -1)
+                cv2.putText(image,
+                            f"{idx}: {X:.2f},{Y:.2f},{Z:.2f}m",
+                            (px + 5, py - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,
+                            (255, 0, 255),
+                            1)
+
+            self.mp_drawing.draw_landmarks(
+                landmark_image,
+                landmarks_xyz,
+                self.mp_hands.HAND_CONNECTIONS,
+                self.mp_drawing_styles.get_default_hand_landmarks_style(),
+                self.mp_drawing_styles.get_default_hand_connections_style()
+            )
+
+            if self.recorder == True:
+                self.hand_writer.write(landmark_image)
 
     def tracking(self, color_image, depth_image):
         """Return list of (x, y, z) coordinates for each hand landmark in meters relative to centre of the camera."""
@@ -49,12 +90,13 @@ class handTrack:
 
             hand_landmarks_xyz.append(xyz_points)
 
-        return hand_landmarks_xyz           
+        return hand_landmarks_xyz, results           
 
     def start_recorder(self, output_path, fps, width, height):
         """Stars the cv2 video writer."""
         os.makedirs(output_path, exist_ok=True)
         self.hand_writer = cv2.VideoWriter(f"{output_path}/hand_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+        self.recorder = True
 
     def stop_recorder(self):
         """Releases the cv2 video writer."""
@@ -90,3 +132,8 @@ class handTrack:
         finally:
             self.stop_recorder()
             self.stop()
+
+
+if __name__ == "__main__":
+    cam = camera.realsenseCamera()
+    track = handTrack(cam)
