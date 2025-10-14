@@ -8,6 +8,11 @@ import pyrealsense2 as rs
 import camera
 
 class handTrack:
+    """
+    Class to track hands using Mediapipe and RealSense camera. This class uses the RealSense camera to capture frames and then uses 
+    Mediapipe to detect hands in those frames. 
+    Requires a camera object from camera.realsenseCamera to be passed in as a parameter.
+    """
     def __init__(self, cam):
         self.cam = cam
         self.mp_hands = mp.solutions.hands
@@ -24,6 +29,10 @@ class handTrack:
         self.recorder = False 
 
     def stream(self, marks_to_show=[0, 4, 8, 12, 16, 20], save=False):
+        """Continuously stream and optionally display color frame with hand landmarks and bones.
+        Prints the XYZ positions (meters) of landmarks specified in marks_to_show.
+        Save the frames to output/ directory if save=True.
+        """
         if save == True:
             self.start_recorder(output_path="output/")
         while True:
@@ -66,7 +75,8 @@ class handTrack:
                 break
 
     def tracking(self, color_image, depth_frame):
-        """Return list of (x, y, z) coordinates for each hand landmark in meters relative to centre of the camera."""
+        """Returns a list of (x, y, z) coordinates for each hand landmark in meters relative to centre of the camera.
+        To use the, call in a while loop, inputing the realsense color image and depth frames then save the list in the desired format."""
         h, w, _ = color_image.shape
         image_rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
         results = self.hands.process(image_rgb)
@@ -97,8 +107,10 @@ class handTrack:
 
         return hand_landmarks_xyz, results           
 
-    def start_recorder(self, output_path, fps, width, height):
+    def start_recorder(self, output_path):
         """Stars the cv2 video writer."""
+        fps = self.cam.fps
+        width, height = self.cam.width, self.cam.height
         os.makedirs(output_path, exist_ok=True)
         self.hand_writer = cv2.VideoWriter(f"{output_path}/hand_video.mp4", cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
         self.recorder = True
