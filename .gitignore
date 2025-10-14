@@ -5,3 +5,4 @@ output/
 output.mp4
 src/realsense_mediapipe_tracking/__pycache__/__init__.cpython-312.pyc
 src/realsense_mediapipe_tracking/__pycache__/camera.cpython-312.pyc
+src/realsense_mediapipe_tracking/__pycache__/hand_tracking.cpython-312.pyc

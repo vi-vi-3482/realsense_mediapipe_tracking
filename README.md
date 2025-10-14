@@ -8,6 +8,9 @@ Mediapipe requires python 3.12 or older unless built from source.
 
 ### Example Streaming
 ``` python
+import sys
+import os
+sys.path.append(os.path.abspath("src/realsense_mediapipe_tracking"))
 import time
 from src.realsense_mediapipe_tracking.camera import realsenseCamera
 from src.realsense_mediapipe_tracking.hand_tracking import handTrack
@@ -37,14 +40,16 @@ if __name__ == "__main__":
 
 ### Example direct x y z coordinate printing
 ```python
-# Example usage for printing the XYZ positions of all hand landmarks
+import sys
+import os
+sys.path.append(os.path.abspath("src/realsense_mediapipe_tracking"))
 
-import camera
+from src.realsense_mediapipe_tracking.camera import realsenseCamera
 from src.realsense_mediapipe_tracking.hand_tracking import handTrack
 
 def main():
     # Initialize the RealSense camera
-    cam = camera.realsenseCamera()
+    cam = realsenseCamera()
 
     # Initialize the hand tracking class with the camera object
     tracker = handTrack(cam)
@@ -63,7 +68,7 @@ def main():
                 for idx, (X, Y, Z) in enumerate(hand_xyz):
                     print(f"Landmark {idx}: X={X:.2f}m, Y={Y:.2f}m, Z={Z:.2f}m")
 
-    except Exception a e:
+    except Exception as e:
         print(f"An error occurred: {e}")
 
     finally:
