@@ -32,6 +32,12 @@ class realsenseCamera:
             self.depth_intrinsics = self.depth_stream.as_video_stream_profile().get_intrinsics()
             self.depth_scale = self.profile.get_device().first_depth_sensor().get_depth_scale()
 
+            frames = self.pipe.wait_for_frames()
+            aligned_frames = self.align.process(frames)
+            aligned_depth_frame = aligned_frames.get_depth_frame()
+            if not aligned_depth_frame:
+                raise RuntimeError("Could not get first aligned depth frame")
+            self.depth_intrinsics_aligned = aligned_depth_frame.get_profile().as_video_stream_profile().get_intrinsics()
 
 
             print("Camera connected")
@@ -51,7 +57,7 @@ class realsenseCamera:
         depth_image = np.asanyarray(depth_frame.get_data())
         color_image = np.asanyarray(color_frame.get_data())
 
-        return color_image, depth_image
+        return color_image, depth_image, depth_frame
 
     def stream(self, display_color=True, display_depth=False, save=False):
         """Continuously stream and optionally display color+depth."""
@@ -59,7 +65,7 @@ class realsenseCamera:
             self.start_recorder(output_path="output/")
         try:
             while True:
-                color_image, depth_image = self.get_frames()
+                color_image, depth_image, _ = self.get_frames()
                 depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
                 if color_image is None or depth_image is None:
                     continue
@@ -105,7 +111,7 @@ class realsenseCamera:
 
                 frame_start = time.monotonic()
                 
-                color_image, depth_image = self.get_frames()
+                color_image, depth_image, _ = self.get_frames()
                 if color_image is None or depth_image is None:
                     continue
                 self.color_writer.write(color_image)

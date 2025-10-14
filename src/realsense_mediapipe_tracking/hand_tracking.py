@@ -4,7 +4,7 @@ import time
 import mediapipe as mp
 import cv2
 import numpy as np
-import realsense_mediapipe_tracking as rs
+import pyrealsense2 as rs
 import camera
 
 class handTrack:
@@ -21,57 +21,58 @@ class handTrack:
         self.mp_draw = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
+        self.recorder = False 
 
     def stream(self, marks_to_show=[0, 4, 8, 12, 16, 20], save=False):
         if save == True:
             self.start_recorder(output_path="output/")
         while True:
-            color_image, depth_image = self.cam.get_frames()
+            color_image, depth_image, depth_frame = self.cam.get_frames()
             h, w, _ = color_image.shape
 
-            landmark_image = copy.deepcopy(color_image)
+            landmarks_xyz, results = self.tracking(color_image, depth_frame)
 
-            landmarks_xyz, results = self.tracking(color_image, depth_image)
+            if not landmarks_xyz:
+                cv2.imshow("Landmark Tracking", color_image)
+                if cv2.waitKey(1) & 0xFF == 27:
+                    break
+                continue
 
-            for idx in marks_to_show:
+            for hand_xyz, hand_results in zip(landmarks_xyz, results.multi_hand_landmarks):
+                for idx in marks_to_show:
+                    X, Y, Z = hand_xyz[idx]
+                    lm = hand_results.landmark[idx]
+                    px, py = int(lm.x * w), int(lm.y * h)
 
-                X = landmarks_xyz[idx][0]
-                Y = landmarks_xyz[idx][1]
-                Z = landmarks_xyz[idx][2]
+                    cv2.circle(color_image, (px, py), 5, (0, 255, 0), -1)
+                    cv2.putText(color_image, f"{idx}: {X:.2f},{Y:.2f},{Z:.2f}m",
+                                (px + 5, py - 5), cv2.FONT_HERSHEY_SIMPLEX,
+                                0.5, (255, 0, 255), 1)
 
-                lm = results.landmark[idx]
+                self.mp_draw.draw_landmarks(
+                    color_image,
+                    hand_results,
+                    self.mp_hands.HAND_CONNECTIONS,
+                    self.mp_drawing_styles.get_default_hand_landmarks_style(),
+                    self.mp_drawing_styles.get_default_hand_connections_style()
+                )
 
-                px, py = int(lm.x * w), int(lm.y * h)
-
-                
-                cv2.circle(landmark_image, (px, py), 5, (0, 255, 0), -1)
-                cv2.putText(image,
-                            f"{idx}: {X:.2f},{Y:.2f},{Z:.2f}m",
-                            (px + 5, py - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            (255, 0, 255),
-                            1)
-
-            self.mp_drawing.draw_landmarks(
-                landmark_image,
-                landmarks_xyz,
-                self.mp_hands.HAND_CONNECTIONS,
-                self.mp_drawing_styles.get_default_hand_landmarks_style(),
-                self.mp_drawing_styles.get_default_hand_connections_style()
-            )
+            cv2.imshow("Landmark Tracking", color_image)
 
             if self.recorder == True:
-                self.hand_writer.write(landmark_image)
+                self.hand_writer.write(color_image)
 
-    def tracking(self, color_image, depth_image):
+            if cv2.waitKey(1) & 0xFF == 27:  # ESC to exit
+                break
+
+    def tracking(self, color_image, depth_frame):
         """Return list of (x, y, z) coordinates for each hand landmark in meters relative to centre of the camera."""
         h, w, _ = color_image.shape
         image_rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
         results = self.hands.process(image_rgb)
 
         if not results.multi_hand_landmarks:
-            return []
+            return [], results
 
         hand_landmarks_xyz = []
 
@@ -83,8 +84,12 @@ class handTrack:
                 cx = np.clip(cx, 0, w - 1)
                 cy = np.clip(cy, 0, h - 1)
 
-                depth = depth_image.get_distance(cx, cy)
-                x, y, z = rs.rs2_deproject_pixel_to_point(self.cam.depth_intrinsics, [cx, cy], depth)
+                depth = depth_frame.get_distance(cx, cy)
+                if depth == 0:
+                    xyz_points.append((np.nan, np.nan, np.nan))
+                    continue
+
+                x, y, z = rs.rs2_deproject_pixel_to_point(self.cam.depth_intrinsics_aligned, [cx, cy], depth)
 
                 xyz_points.append((x, y, z))
 
@@ -137,3 +142,4 @@ class handTrack:
 if __name__ == "__main__":
     cam = camera.realsenseCamera()
     track = handTrack(cam)
+    track.stream()
