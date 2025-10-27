@@ -55,7 +55,30 @@ def save_to_csv(save_path, interval=1):
     cam = realsenseCamera()
     tracker = handTrack(cam)
 
-    header = ['time', ]
+    header = ['hello'] + list(range(0, 20))
     with open(save_path, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+        time0 = time.monotonic()
+        last_time = time.monotonic()
+        try:
+            while True:
+                color_image, depth_image, depth_frame = tracker.cam.get_frames()
+                
+                if color_image is None or depth_image is None:
+                    continue
+                
+                current_time = time.monotonic()
+                landmarks_xyz, results = tracker.tracking(color_image, depth_frame)
 
+                if current_time - last_time >= interval:
+                    for hand_xyz in landmarks_xyz:
+                        for idx, (X, Y, Z) in enumerate(hand_xyz):
+                            writer.writerow([current_time - time0] + landmarks_xyz)
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        finally:
+            cam.stop()
 
