@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 class realsenseCamera:
+    """This is the class to control the real sense camera"""
     def __init__(self, width=640, height=480, fps=30):
 
         self.width = width
