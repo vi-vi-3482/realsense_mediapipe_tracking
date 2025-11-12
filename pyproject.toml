@@ -1,6 +1,6 @@
 [project]
 name = "realsense-mediapipe-tracking"
-version = "0.1.0"
+version = "0.1.1"
 description = "Combines Intel RealSense and Mediapipe for hand tracking."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,9 +10,6 @@ dependencies = [
     "opencv-python>=4.12.0.88",
     "pyrealsense2>=2.56.5.9235",
 ]
-
-[project.scripts]
-realsense-mediapipe-tracking = "realsense_mediapipe_tracking:main"
 
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
