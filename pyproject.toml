@@ -1,6 +1,6 @@
 [project]
 name = "realsense-mediapipe-tracking"
-version = "0.1.1"
+version = "0.1.2"
 description = "Combines Intel RealSense and Mediapipe for hand tracking."
 readme = "README.md"
 requires-python = ">=3.12"
