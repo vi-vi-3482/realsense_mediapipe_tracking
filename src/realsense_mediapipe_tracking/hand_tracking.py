@@ -1,7 +1,7 @@
 import copy
 import os
 import time
-import mediapipe as mp
+import mediapipe
 import cv2
 import numpy as np
 import pyrealsense2 as rs
@@ -15,7 +15,7 @@ class handTrack:
     """
     def __init__(self, cam):
         self.cam = cam
-        self.mp_hands = mp.solutions.hands
+        self.mp_hands = mediapipe.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=False,       
             max_num_hands=2,               
@@ -23,8 +23,8 @@ class handTrack:
             min_detection_confidence=0.5,  
             min_tracking_confidence=0.5    
         )
-        self.mp_draw = mp.solutions.drawing_utils
-        self.mp_drawing_styles = mp.solutions.drawing_styles
+        self.mp_draw = mediapipe.solutions.drawing_utils
+        self.mp_drawing_styles = mediapipe.solutions.drawing_styles
 
         self.recorder = False 
 
